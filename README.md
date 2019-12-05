@@ -232,8 +232,7 @@ ws.delete(window) //true
 ws.has(window) //false
 ```
 3. 字典(Map)
-
- 集合 和 字典 的区别：
+集合 和 字典 的区别：
  * 共同点：集合、字典可以储存不重复的值
  * 不同点：集合 是以[value, value]的形式储存元素，字典是以[key, value]的形式储存
  ```JavaScript
@@ -329,3 +328,130 @@ undefined的原因在于['a']和['a']并不是同一个对象的引用，可修�
  ```JavaScript
  Map[Symbol.iterator] === Map.entries //true
  ```
+ Map结构转换为数组结构，比较快速的方法是用扩展运算符(...)
+
+ 与其他数据结构的相互转换：
+
+ 1. Map转Array
+ ```JavaScript
+ const map = new Map([[1, 1], [2, 2], [3, 3]])
+ console.log([...map]) // [[1, 1], [2, 2], [3, 3]]
+ ```
+ 2. Array转Map
+ ```JavaScript
+ const map = new Map([[1, 1], [2, 2], [3, 3]])
+ console.log(map) //Map(3) {1 => 1, 2 => 2, 3 => 3}
+ ```
+ 3. Map转Object
+ 因为Object的键名都为字符串，而Map的键名为对象，所以转换的时候会把非字符串键名转换为字符串键名。
+ ```JavaScript
+ function mapToObj (map) {
+   let obj = Object.create(null)
+   for (let [key, value] of map) {
+     obj[key] = value
+   }
+   return obj
+ }
+ const map = new Map().set('name', 'An').set('des', 'JS')
+ mapToObj(map) //{name: "An", des: "JS"}
+ ```
+ 4. Object转Map
+ ```JavaScript
+ function objToMap (obj) {
+   let map = new Map()
+   for(let key of Object.keys(obj)) {
+     map.set(key, obj[key])
+   }
+   return map
+ }
+objToMap({'name': 'An', 'des': 'JS'}) //Map(2) {"name" => "An", "des" => "JS"}
+ ```
+ 5. Map转JSON
+ ```JavaScript
+ function mapToJSON (map) {
+   return JSON.stringify([...map])
+ }
+ let map = new Map().set('name', 'An').set('des', 'JS')
+ mapToJSON(map) //"[["name","An"],["des","JS"]]"
+ ```
+ 6. JSON转Map
+ ```JavaScript
+ function jsonToStrMap (jsonStr) {
+   return objToMap(JSON.parse(jsonStr))
+ }
+ jsonToStrMap('{"name": "An", "des": "JS"}')
+ ```
+
+4. WeakMap
+WeakMap对象是一组键值对的集合，其中的**键是弱引用对象，而值可以是任意。**<br/>
+**WeakMap弱引用的只是键名，而不是键值。键值依然可以正常引用。**<br/>
+WeakMap中，每个键对自己所引用对象的引用都是弱引用，在没有其他引用和该键引用同一对象，这个对象将会被垃圾回收(相应的key变成无效的)，所以WeakMap的key是不可枚举的。<br/>
+属性：
+* constructor：构造函数
+方法：
+* has(key)：判断是否有key关联对象
+* get(key)：返回key关联对象(没有则则返回undefined)
+* set(key)：设置一组key关联对象
+* delete(key)：移除key的关联对象
+```JavaScript
+let myElement = document.getElementById('logo')
+let myWeakMap = new WeakMap()
+myWeakMap.set(myElement, {timesClicked: 0})
+myElement.addEventListener('click', function () {
+  let logoData = myWeakMap.get(myElement)
+  logoData.timesClicked++
+}, false)
+```
+5. 总结
+* Set
+  - 成员唯一、无序且不重复
+  - [value, value]，键值与键名是一致的(或者说只有键值，没有键名)
+  - 可以遍历，方法有：add、delete、has
+* WeakSet
+  - 成员都是对象
+  - 成员都是弱引用，可以被垃圾回收机制回收，可以用来保存DOM节点，不容易造成内存泄漏
+  - 不能遍历，方法有add、delete、has
+* Map
+  - 本质上是键值对的集合，类似集合
+  - 可以遍历，方法很多可以跟各种数据格式转换
+* WeakMap
+  - 只接受对象作为键名(null除外)，不接受其他类型的值作为键名
+  - 键名是弱作用，键值可以是任意的，键名所指向的对象可以被垃圾回收，此时键名是无效的
+  - 不能遍历，方法有get、set、has、delete
+## 介绍下深度优先遍历和广度优先遍历，如何实现？
+```HTML
+<body>
+  <div class="parent">
+    <div class="child-1">
+      <div class="child-1-1">
+        <div class="child-1-1-1">
+          a
+        </div>
+      </div>
+      <div class="child-1-2">
+        <div class="child-1-2-1">
+          b
+        </div>
+      </div>
+      <div class="child-1-3">
+        c
+      </div>
+    </div>
+    <div class="child-2">
+      <div class="child-2-1">
+        d
+      </div>
+      <div class="child-2-2">
+        e
+      </div>
+    </div>
+    <div class="child-3">
+      <div class="child-3-1">
+        f
+      </div>
+    </div>
+  </div>
+</body>
+```
+### 深度优先遍历
+深度优先遍历DFS与树的先序遍历类似。假设初始状态是图中所有顶点均未被访问，则从某个顶点v出发，首先访问该顶点然后依次从它的各个未被访问的邻接点出发深度优先搜索遍历图，直至图中所有和v有路径相通的顶点都被访问到。若此时尚有其他顶点未被访问到，则另选一个未被访问的顶点作起始点，重复上述过程，直至图中所有顶点都被访问到为止。
