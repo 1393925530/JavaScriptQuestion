@@ -455,3 +455,228 @@ myElement.addEventListener('click', function () {
 ```
 ### 深度优先遍历
 深度优先遍历DFS与树的先序遍历类似。假设初始状态是图中所有顶点均未被访问，则从某个顶点v出发，首先访问该顶点然后依次从它的各个未被访问的邻接点出发深度优先搜索遍历图，直至图中所有和v有路径相通的顶点都被访问到。若此时尚有其他顶点未被访问到，则另选一个未被访问的顶点作起始点，重复上述过程，直至图中所有顶点都被访问到为止。
+```JavaScript
+//深度优先遍历三种方式
+let deepTravelsal1 = (node, nodeList = []) => {
+  if (node !== null) {
+    nodeList.push(node)
+    let children = node.children
+    for (let i = 0; i < children.length; i++) {
+      deepTravelsal1(node[i], nodeList)
+    }
+  }
+  return nodeList
+}
+let deepTravelSal2 = (node) => {
+  let nodes = []
+  if (node !== null) {
+    nodes.push(node)
+    let children = node.children
+    for (let i = 0; i < children.length; i++) {
+      nodes = nodes.concat(deepTravelSal2(children[i]))
+    }
+  }
+  return nodes
+}
+// 非递归 ?
+let deepTraversal3 = (node) => {
+  let stack = []
+  let nodes = []
+  if (node) {
+    // 推入当前处理的node
+    stack.push(node)
+    while (stack.length) {
+      let item = stack.pop() //从数组中删除最后一个元素，并返回该元素的值
+      let children = item.children
+      nodes.push(item)
+      // node = [] stack = [parent]
+      // node = [parent] stack = [child3,child2,child1]
+      // node = [parent, child1] stack = [child3,child2,child1-2,child1-1]
+      // node = [parent, child1-1] stack = [child3,child2,child1-2]
+      for (let i = children.length - 1; i >= 0; i--) {
+        stack.push(children[i])
+      }
+    }
+  }
+  return nodes
+}
+```
+### 广度优先遍历
+广度优先遍历BFS从图中某顶点V出发，在访问了V之后依次访问V的各个未曾访问过的邻接点出发依次访问它们的邻接点，并使得先被访问的顶点的邻接点先于后被访问的顶点的邻接点被访问的顶点的邻接点被访问，直至图中所有已被访问的顶点的邻接点被访问到。如果此时图中尚有顶点未被访问，则需要另选一个未曾被访问过的顶点作为新的起始点，重复上述过程，直至图中所有顶点都被访问到为止。
+```JavaScript
+let widthTraversal2 = (node) => {
+  let nodes = []
+  let stack = []
+  if (node) {
+    stack.push(node)
+    while (stack.length) {
+      let item = stack.shift() //从数组中删除第一个元素，并返回该元素的值
+      let children = item.children
+      nodes.push(item)
+      for (let i = 0; i < children.length; i++) {
+        stack.push(children[i])
+      }
+    }
+  }
+  return nodes
+}
+```
+
+## 请分别用深度优先思想和广度优先思想实现一个拷贝函数？
+```JavaScript
+//工具函数
+let _toString = Object.prototype.toString
+let map = {
+  array: 'Array',
+  object: 'Object',
+  function: 'Function',
+  string: 'String',
+  null: 'Null',
+  undefined: 'Undefined',
+  boolean: 'Boolean',
+  number: 'Number'
+}
+let getType = (item) => {
+  return _toString.call(item).slice(8, -1)
+}
+let isTypeOf = (item, type) => {
+  return map[type] && map[type] === getType(item)
+}
+```
+深复制 深度优先遍历
+```JavaScript
+let DFSdeepClone = (obj, visitedArr = []) => { //在第一次调用函数时，visitedArr是空数组
+  let _obj = {}
+  if (isTypeOf(obj, 'array') || isTypeOf(obj, 'object')) {
+    let index = visitedArr.indexOf(obj) //可返回数组中某个指定的元素位置
+    _obj = isTypeOf(obj, 'array') ? [] : {}
+    if (~index) {
+      _obj = visitedArr[index]
+    } else {
+      visitedArr.push(obj)
+      for (let item in obj) {
+        _obj[item] = DFSdeepClone(obj[item], visitedArr)
+      }
+    }
+  } else if (isTypeOf(obj, 'function')) {
+    _obj = eval('(' + obj.toString() + ')')
+  } else {
+    _obj = obj
+  }
+  return _obj
+}
+```
+广度优先遍历 //TODO
+## ES5/ES6 的继承除了写法以外还有什么区别？
+1. ```class```声明会提升，但不会初始化赋值。```Foo```进入暂时性死区，类似于```let```、```const```声明变量。
+```JavaScript
+const bar = new Bar()
+function Bar () {
+  this.bar = 42
+}
+
+const foo = new Foo() //Uncaught ReferenceError: Cannot access 'Foo' before initialization
+class Foo {
+  constructor() {
+    this.foo = 42
+  }
+}
+```
+2. ```class```声明内部会启用严格模式。
+```JavaScript
+//引用一个未声明的变量
+function Bar () {
+  baz = 42
+}
+const bar = new Bar()
+
+class Foo {
+  constructor() {
+    fol = 42
+  }
+}
+const foo = new Foo() //Uncaught ReferenceError: fol is not defined
+```
+3. ```class```的所有方法(包括静态方法和实例方法)都是不可枚举的。
+```JavaScript
+//引用一个未声明的变量
+function Bar () {
+  this.bar = 42
+}
+Bar.answer = function () {
+  return 42
+}
+Bar.prototype.print = function () {
+  console.log(this.bar)
+}
+const barKeys = Object.keys(Bar) //["answer"]
+const barProtoKeys = Object.keys(Bar.prototype) //["print"]
+
+class Foo {
+  constructor () {
+    this.foo = 42
+  }
+  static answer () {
+    return 42
+  }
+  print () {
+    console.log(this.foo)
+  }
+}
+const fooKeys = Object.keys(Foo) //[]
+const fooProtoKeys = Object.keys(Foo.prototype) //[]
+```
+4. ```class```的所有方法(包括静态方法和实例方法)都没有原型对象prototype，所以也没用```[[construct]]```，不能使用```new```来调用。
+```JavaScript
+function Bar () {
+  this.bar = 42
+}
+Bar.prototype.print = function () {
+  console.log(this.bar)
+}
+
+const bar = new Bar()
+const barPrint = new bar.print()
+
+class Foo {
+  constructor() {
+    this.foo = 42
+  }
+  print () {
+    console.log(this.foo)
+  }
+}
+const foo = new Foo()
+const fooPrint = new foo.print() //Uncaught TypeError: foo.print is not a constructor
+```
+5. 必须使用```new```调用```class```。
+```JavaScript
+function Bar () {
+  this.bar = 42
+}
+const bar = Bar()
+
+class Foo {
+  constructor() {
+    this.foo = 42
+  }
+}
+const foo = Foo() //Uncaught TypeError: Class constructor Foo cannot be invoked without 'new'
+```
+6. ```class```内部无法重写类名。
+```JavaScript
+function Bar () {
+  Bar = 'Baz'
+  this.bar = 42
+}
+const bar = Bar()
+
+class Foo {
+  constructor () {
+    this.foo = 42
+    Foo = 'Fol' //Uncaught TypeError: Assignment to constant variable.
+  }
+}
+const foo = new Foo()
+Foo = 'Fol'
+```
