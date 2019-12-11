@@ -680,3 +680,69 @@ class Foo {
 const foo = new Foo()
 Foo = 'Fol'
 ```
+## setTimeout、Promise、Async/Await 的区别
+1. setTimeout
+```JavaScript
+console.log('script start')
+setTimeout(function () {
+  console.log('settimeout')
+})
+console.log('script end')
+//输出顺序：script start -> script end -> settimeout
+```
+2. Promise
+Promise本身是**同步的立即执行函数**，当在executor中执行resolve或者reject的时候，此时是异步操作，会先执行then/catch等，当主栈完成后，才会去调用resolve/reject中存放的方法执行，打印p的时候，是打印的返回结果，一个Promise实例。
+```JavaScript
+console.log('script start')
+let promise1 = new Promise(function (resolve) {
+  console.log('promise1')
+  resolve()
+  console.log('promise1 end')
+}).then(function () {
+  console.log('promise2')
+})
+setTimeout(function () {
+  console.log('settimeout')
+})
+console.log('script end')
+// 输出顺序：script start -> promise1 -> promise1 end -> script end -> promise2 -> settimeout
+// 优先级：process.nextTick > promise.then > setTimeout > setImmediate
+// https://www.zhihu.com/question/36972010
+```
+当JS主线程执行到Promise对象时，
+* promise1.then()的回调就是一个task
+* promise1是resolved或rejected：那这个task就会放入当前事件循环回合的microtask queue
+* promise1是pending：这个task就会放入事件循环的未来的某个(可能下一个)回合的microtask queue中
+* setTimeout的回调也是个task，它会被放入macrotask queue即使是0ms的情况
+3. async/await
+```JavaScript
+async function async1 () {
+  console.log('async1 start')
+  await async2()
+  console.log('async1 end')
+}
+async function async2 () {
+  console.log('async2')
+}
+
+console.log('script start')
+async1()
+console.log('script end')
+// 输出顺序：script start -> async1 start -> async2 -> script end -> async1 end
+```
+async函数返回一个Promise对象，当函数执行的时候，一旦遇到await就会先返回，等到触发的异步操作完成，再执行函数体内后面的语句。可以理解为，是让出了线程，跳出了async函数体。
+举个例子：
+```JavaScript
+async function func1 () {
+  return 1
+}
+
+console.log(func1()) //Promise {<resolved>: 1} __proto__: Promise [[PromiseStatus]]: "resolved" [[PromiseValue]]: 1
+```
+func1的运行结果就是一个Promise对象。可以使用then处理后续逻辑。
+```JavaScript
+func1().then(res => {
+  console.log(res) // 30
+})
+```
+await的含义为等待，也就是async函数需要等待await后的函数执行完成并且有了返回结果(Promise对象)之后，才能继续执行下面的代码。await通过返回一个Promise对象来实现同步效果。
